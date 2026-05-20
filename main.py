@@ -55,7 +55,7 @@ class GameBoardView(QGraphicsView):
     def __init__(self, humans_count, bots_count):
         super().__init__()
         
-        self.game_scene = QGraphicsScene(0, 0, 2000, 2000)
+        self.game_scene = QGraphicsScene(0, 0, 2400, 2000)
         self.setScene(self.game_scene)
         self.setBackgroundBrush(QBrush(QColor(30, 30, 30)))
 
@@ -69,7 +69,7 @@ class GameBoardView(QGraphicsView):
 
         self.game_map = GameMap(0, 0)
         self.game_scene.addItem(self.game_map)
-        self.game_map.setPos(430, 430)
+        self.game_map.setPos(630, 430)
         self.centerOn(self.game_map)
 
         self.players = []
