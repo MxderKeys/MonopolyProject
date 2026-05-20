@@ -44,6 +44,7 @@ class Player:
             prop.is_mortgaged = False
             if hasattr(prop, 'buildings_level'):
                 prop.buildings_level = 0
+            prop.value_text = str(prop.property_price)
             prop.setOpacity(1.0)
             prop.setBrush(QBrush())
             

@@ -11,7 +11,7 @@ from cell import Cell
 from player import BotPlayer
 
 class AuctionDialog(QDialog):
-    def __init__(self, property_cell, players, on_finish_callback):
+    def __init__(self, property_cell, players, on_finish_callback, current_id):
         super().__init__()
         self.setWindowTitle(f"Аукцион: {property_cell.property_name}")
         self.cell = property_cell
@@ -24,7 +24,7 @@ class AuctionDialog(QDialog):
         
         self.current_bid = 0
         self.current_winner = None
-        self.active_index = 0
+        self.active_index = current_id
         
         layout = QVBoxLayout(self)
         
@@ -119,7 +119,7 @@ class AuctionDialog(QDialog):
             if bot_bid < self.cell.property_price // 2:
                 bot_bid = self.cell.property_price // 2 # Начинаем со стартовой цены
                 
-            if bot_bid <= player.money and bot_bid <= (player.money * 0.40):
+            if bot_bid <= 3 * self.cell.property_price and bot_bid <= (player.money * 0.40):
                 self.current_bid = bot_bid
                 self.current_winner = player
                 print(f"Бот {player.name} ставит ${bot_bid}")
@@ -202,6 +202,7 @@ class BuyDialog(QDialog):
         if self.player.money >= self.cell.property_price:
             self.player.pay(self.cell.property_price)
             self.cell.owner = self.player
+            self.cell.value_text.setPlainText(str(self.cell.rent_list[0]))
             self.player.properties.append(self.cell)
 
             tint_color = QColor(self.player.color)
@@ -218,7 +219,7 @@ class BuyDialog(QDialog):
 
     def go_auction(self):
         print("Аукцион начинается!")
-        self.auction_window = AuctionDialog(self.cell, self.player_list, self.unlock_callback)
+        self.auction_window = AuctionDialog(self.cell, self.player_list, self.unlock_callback, self.player.player_id)
         self.auction_window.show()
         self.is_resolved = True 
         self.close()
