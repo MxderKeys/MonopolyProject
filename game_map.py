@@ -99,8 +99,8 @@ class GameMap(QGraphicsRectItem):
             player.receive(200)
 
         target_cell = self.cells[new_position]
-        action_result = target_cell.on_player_step(player, self)
         player.move_to_cell(target_cell, new_position)
+        action_result = target_cell.on_player_step(player, self)
 
         if action_result and "teleport_to" in action_result:
             jail_idx = action_result["teleport_to"]

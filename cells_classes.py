@@ -76,15 +76,14 @@ class PropertyCell(Cell):
         if self.owner is None:
             # === ПРОВЕРКА НА БОТА ===
             if isinstance(player, BotPlayer):
-                if player.wants_to_buy(self):
+                if player.buy_decision(self):
                     player.pay(self.property_price)
                     self.owner = player
                     player.properties.append(self)
-                    
-                    from PySide6.QtGui import QPen, QColor
-                    pen = QPen(QColor(player.color))
-                    pen.setWidth(4)
-                    self.color_rect.setPen(pen)
+    
+                    tint_color = QColor(player.color)
+                    tint_color.setAlpha(70)
+                    self.setBrush(QBrush(tint_color))
                     print(f"[{player.name}] купил {self.property_name}!")
                 else:
                     print(f"[{player.name}] отказался от покупки. Аукцион!")
@@ -95,27 +94,27 @@ class PropertyCell(Cell):
                 self.buy_window.show()
 
         elif self.owner != player:
-            if not self.is_mortgaged and not self.owner.in_jail:
+            if not self.is_mortgaged:
                 rent_amount = self.rent_list[self.buildings_level]
-                print(f"-> {player.name} платит ренту ${rent_amount} игроку {self.owner.name}")
-
-                if player.money < rent_amount:
-                    if isinstance(player, BotPlayer):
-                        # Бот пытается найти деньги сам
-                        player.find_money(rent_amount)
-                    else:
-                        game_map.is_dice_blocked = True 
-                        self.buy_window = BuyDialog(self, player, game_map.unlock_dice)
-                        self.buy_window.show()
-
-                player.pay(rent_amount)
-                self.owner.receive(rent_amount)
+                print(f"-> {player.name} должен платить ренту ${rent_amount} игроку {self.owner.name}")
+                
+                player.pay_or_bankrupt(rent_amount, creditor=self.owner)
             else:
-                print(f"{self.owner} сосёт бибу. Территория в залоге и никто ему ничего не должен!")
+                print(f"{self.owner.name} сосёт бибу. Территория в залоге и никто ему ничего не должен!")
 
 
     def show_info(self):
-        self.info_window = PropertyInfoDialog(self, self.owner)
+        game_map = self.parentItem()
+        active_player = getattr(game_map, 'active_player', None)
+        
+        if hasattr(game_map, 'current_info_window') and game_map.current_info_window is not None:
+            try:
+                game_map.current_info_window.close()
+            except RuntimeError:
+                pass 
+
+        self.info_window = PropertyInfoDialog(self, active_player)
+        game_map.current_info_window = self.info_window
         self.info_window.show()
 
 
@@ -125,8 +124,10 @@ class StartCell(Cell):
         self.name = "Старт"
 
         self.setPos(x, y)
+        self.setBrush(QBrush(QColor(240, 240, 240)))
         font = QFont("Arial", 12)
         font.setBold(True)
+        self.prize = prize
 
         option = QTextOption()
         option = QTextOption(Qt.AlignmentFlag.AlignCenter)
@@ -189,7 +190,7 @@ class ChanceCell(Cell):
             player.receive(outcome)
         else:
             print(f"{player.name}-лошара! У него из кармана выпало ${abs(outcome)}")
-            player.pay(abs(outcome))
+            player.pay_or_bankrupt(abs(outcome))
 
     def show_info(self):
         print(f"Открываем красивое окно с информацией об улице")
@@ -285,7 +286,7 @@ class KasinoCell(Cell):
             player.receive(outcome)
         else:
             print(f"Неудача. {player.name} проиграл в казино ${abs(outcome)}")
-            player.pay(abs(outcome))
+            player.pay_or_bankrupt(abs(outcome))
 
     def show_info(self):
         print(f"Открываем красивое окно казино")
@@ -340,7 +341,7 @@ class PropertyInfoDialog(QDialog):
             status += " (В ЗАЛОГЕ)"
         layout.addWidget(QLabel(f"Статус: {status}"))
         
-        if self.cell.owner == self.player:
+        if self.cell.owner is not None and self.cell.owner == self.player and not isinstance(self.player, BotPlayer):
             if not self.cell.is_mortgaged:
                 self.mortgage_btn = QPushButton("Заложить (получить 50%)")
                 self.mortgage_btn.clicked.connect(self.mortgage)
@@ -372,10 +373,14 @@ class BuyDialog(QDialog):
         super().__init__()
         self.setWindowTitle("Покупка участка")
         self.setModal(False)
-        
+        self.setFixedSize(300, 150)
+        self.setWindowFlag(Qt.WindowType.WindowCloseButtonHint, False)
+
         self.cell = property_cell
         self.player = player
         self.unlock_callback = unlock_callback
+
+        self.is_resolved = False
         
         layout = QVBoxLayout(self)
         
@@ -399,12 +404,13 @@ class BuyDialog(QDialog):
             self.player.pay(self.cell.property_price)
             self.cell.owner = self.player
             self.player.properties.append(self.cell)
-            
-            pen = QPen(QColor(self.player.color))
-            pen.setWidth(4)
-            self.cell.color_rect.setPen(pen)
+
+            tint_color = QColor(self.player.color)
+            tint_color.setAlpha(80)
+            self.cell.setBrush(QBrush(tint_color))
             
             print(f"[{self.player.name}] Купил участок!")
+            self.is_resolved = True
             self.unlock_callback() 
             self.close()
         else:
@@ -413,5 +419,20 @@ class BuyDialog(QDialog):
 
     def go_auction(self):
         print("Отправляем на аукцион!")
+        self.is_resolved = True
         self.unlock_callback()
         self.close()
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Escape:
+            print("Клавиша Escape заблокирована в этом окне!")
+            event.ignore()
+        else:
+            super().keyPressEvent(event)
+
+    def closeEvent(self, event):
+        if not self.is_resolved:
+            print("АЛЁ!!! Куда закрываешь?")
+            event.ignore()
+        else:
+            super().closeEvent(event)
