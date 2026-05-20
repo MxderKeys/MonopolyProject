@@ -49,6 +49,9 @@ class Player:
             
         self.properties.clear()
         self.token.hide()
+        
+        if hasattr(self, 'profile_ui'):
+            self.profile_ui.update_balance()
 
     def pay_or_bankrupt(self, amount, creditor=None):
         """Универсальный метод попытки оплаты"""
@@ -69,16 +72,6 @@ class Player:
             
         return True
 
-    def pay(self, amount):
-        self.money -= amount
-        print(f"[{self.name}] Заплатил ${amount}. Баланс: ${self.money}")
-        if self.money < 0:
-            print(f"[{self.name}] БАНКРОТ!")
-
-    def receive(self, amount):
-        self.money += amount
-        print(f"[{self.name}] Получил ${amount}. Баланс: ${self.money}")
-
     def move_to_cell(self, cell, index):
         self.position = index
         rect = cell.sceneBoundingRect()
@@ -92,6 +85,16 @@ class Player:
         ]
         ox, oy = offsets[self.player_id % 4]
         self.token.setPos(cx + ox, cy + oy)
+        
+    def receive(self, amount):
+        self.money += amount
+        if hasattr(self, 'profile_ui'):
+            self.profile_ui.update_balance()
+
+    def pay(self, amount):
+        self.money -= amount
+        if hasattr(self, 'profile_ui'):
+            self.profile_ui.update_balance()
 
 
 class BotPlayer(Player):

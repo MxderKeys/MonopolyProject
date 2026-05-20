@@ -9,6 +9,8 @@ import random
 from cell import Cell
 from player import BotPlayer
 
+from dialogs import *
+
 GROUP_COLORS = {
     "КОФЕЙНИ": QColor(150, 75, 0),             #Коричневая
     "РЕСТОРАНЫ": QColor(0, 0, 255),            #Синяя
@@ -94,8 +96,9 @@ class PropertyCell(Cell):
                     print(f"[{player.name}] отказался от покупки. Аукцион!")
                     
             else:
-                game_map.is_dice_blocked = True 
-                self.buy_window = BuyDialog(self, player, game_map.unlock_dice)
+                game_map.is_dice_blocked = True
+                all_players = game_map.players
+                self.buy_window = BuyDialog(self, player, game_map.unlock_dice, all_players)
                 self.buy_window.show()
 
         elif self.owner != player:
@@ -328,116 +331,3 @@ class TrapCell(Cell):
     def show_info(self):
         print(f"Открываем красивое окно с информацией о ловушке")
 
-
-class PropertyInfoDialog(QDialog):
-    def __init__(self, property_cell, player=None):
-        super().__init__()
-        self.setWindowTitle(f"Информация: {property_cell.property_name}")
-
-        self.setModal(False) 
-        self.cell = property_cell
-        self.player = player
-        
-        layout = QVBoxLayout(self)
-        layout.addWidget(QLabel(f"Цена: ${self.cell.property_price}"))
-        
-        status = "Свободен" if not self.cell.owner else f"Владелец: {self.cell.owner.name}"
-        if self.cell.is_mortgaged:
-            status += " (В ЗАЛОГЕ)"
-        layout.addWidget(QLabel(f"Статус: {status}"))
-        
-        if self.cell.owner is not None and self.cell.owner == self.player and not isinstance(self.player, BotPlayer):
-            if not self.cell.is_mortgaged:
-                self.mortgage_btn = QPushButton("Заложить (получить 50%)")
-                self.mortgage_btn.clicked.connect(self.mortgage)
-                layout.addWidget(self.mortgage_btn)
-            else:
-                self.unmortgage_btn = QPushButton("Выкупить из залога")
-                self.unmortgage_btn.clicked.connect(self.unmortgage)
-                layout.addWidget(self.unmortgage_btn)
-
-    def mortgage(self):
-        self.cell.is_mortgaged = True
-        self.cell.setOpacity(0.5)
-        self.player.receive(self.cell.property_price // 2)
-        self.close()
-
-    def unmortgage(self):
-        cost = (self.cell.property_price // 2)
-        if self.player.money >= cost:
-            self.player.pay(cost)
-            self.cell.is_mortgaged = False
-            self.cell.setOpacity(1.0)
-            self.close()
-        else:
-            print("Не хватает денег для выкупа!")
-
-
-class BuyDialog(QDialog):
-    def __init__(self, property_cell, player, unlock_callback):
-        super().__init__()
-        self.setWindowTitle("Покупка участка")
-        self.setModal(False)
-        self.setFixedSize(300, 150)
-        self.setWindowFlag(Qt.WindowType.WindowCloseButtonHint, False)
-
-        self.cell = property_cell
-        self.player = player
-        self.unlock_callback = unlock_callback
-
-        self.is_resolved = False
-        
-        layout = QVBoxLayout(self)
-        
-        self.balance_label = QLabel(f"Ваш баланс: ${self.player.money}")
-        layout.addWidget(QLabel(f"Участок: {self.cell.property_name}\nЦена: ${self.cell.property_price}"))
-        layout.addWidget(self.balance_label)
-        
-        self.buy_btn = QPushButton("Купить")
-        self.buy_btn.clicked.connect(self.try_buy)
-        layout.addWidget(self.buy_btn)
-        
-        self.auction_btn = QPushButton("Аукцион")
-        self.auction_btn.clicked.connect(self.go_auction)
-        layout.addWidget(self.auction_btn)
-
-    def update_balance(self):
-        self.balance_label.setText(f"Ваш баланс: ${self.player.money}")
-
-    def try_buy(self):
-        if self.player.money >= self.cell.property_price:
-            self.player.pay(self.cell.property_price)
-            self.cell.owner = self.player
-            self.player.properties.append(self.cell)
-
-            tint_color = QColor(self.player.color)
-            tint_color.setAlpha(80)
-            self.cell.owner_tint.setBrush(QBrush(tint_color))
-
-            print(f"[{self.player.name}] Купил участок!")
-            self.is_resolved = True
-            self.unlock_callback() 
-            self.close()
-        else:
-            print("Всё ещё не хватает денег! Продайте что-нибудь на поле.")
-            self.update_balance()
-
-    def go_auction(self):
-        print("Отправляем на аукцион!")
-        self.is_resolved = True
-        self.unlock_callback()
-        self.close()
-
-    def keyPressEvent(self, event):
-        if event.key() == Qt.Key_Escape:
-            print("Клавиша Escape заблокирована в этом окне!")
-            event.ignore()
-        else:
-            super().keyPressEvent(event)
-
-    def closeEvent(self, event):
-        if not self.is_resolved:
-            print("АЛЁ!!! Куда закрываешь?")
-            event.ignore()
-        else:
-            super().closeEvent(event)

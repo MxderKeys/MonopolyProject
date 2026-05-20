@@ -14,6 +14,7 @@ class GameMap(QGraphicsRectItem):
         self.setPen(QColor(0, 0, 0))  # Black border
         self.setZValue(1)
 
+        self.players = []
         self.is_dice_blocked = False
         self.cells = []
         self.properties = []

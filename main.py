@@ -11,6 +11,7 @@ from player import Player, BotPlayer
 from cells_classes import PropertyCell, StartCell, ChanceCell, RestCell, MoneyCell, KasinoCell, TrapCell
 from map_config import cells_list
 from game_map import GameMap
+from game_ui import  *
 
 class GameSetupDialog(QDialog):
     def __init__(self):
@@ -87,6 +88,33 @@ class GameBoardView(QGraphicsView):
             bot.player_id = color_idx
             self.players.append(bot)
             color_idx += 1
+            
+        self.game_map.players = self.players
+        
+        offset_min = 220 
+        offset_max = 900
+        
+        corner_positions = [
+            (offset_min, offset_min),           # Верхний левый
+            (offset_max, offset_min),           # Верхний правый
+            (offset_min, offset_max),           # Нижний левый
+            (offset_max, offset_max)            # Нижний правый
+        ]
+        
+        for i, p in enumerate(self.players):
+            px, py = corner_positions[i]
+            profile = PlayerProfile(p)
+            profile.setPos(px, py)
+            p.profile_ui = profile
+            self.game_scene.addItem(profile)
+
+        self.dice_ui = DiceUI()
+
+        center_pos = (offset_min + offset_max) / 2
+        self.dice_ui.setPos(center_pos - 50, center_pos) 
+        self.game_scene.addItem(self.dice_ui)
+
+        self.game_map.dice_ui = self.dice_ui
 
         if self.game_map.cells:
             for p in self.players:
@@ -105,7 +133,7 @@ class GameBoardView(QGraphicsView):
         active_players = [p for p in self.players if not p.is_bankrupt]
         if len(active_players) == 1:
             winner = active_players[0]
-            print(f"\n🏆 ИГРА ОКОНЧЕНА! ПОБЕДИТЕЛЬ: {winner.name} 🏆")
+            print(f"\nИГРА ОКОНЧЕНА! ПОБЕДИТЕЛЬ: {winner.name}")
             QMessageBox.information(self, "Конец игры", f"Победил {winner.name}!\nОстальные игроки обанкротились.")
             return
 
