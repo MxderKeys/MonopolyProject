@@ -34,7 +34,20 @@ class PropertyCell(Cell):
         self.is_mortgaged = False
         self.buildings_level = 0
 
-        self.rent_list = rent_list if rent_list else [10, 50, 150, 450, 625, 750]
+        if self.property_price <= 150:
+            self.rent_list = rent_list if rent_list else [30, 60, 150, 450, 625, 750]
+        elif self.property_price <= 200:
+            self.rent_list = rent_list if rent_list else [50, 80, 200, 600, 900, 1200]
+        elif self.property_price <= 300:
+            self.rent_list = rent_list if rent_list else [80, 80, 200, 600, 900, 1200]
+        elif self.property_price <= 400:
+            self.rent_list = rent_list if rent_list else [100, 80, 200, 600, 900, 1200]
+        elif self.property_price <= 500:
+            self.rent_list = rent_list if rent_list else [150, 80, 200, 600, 900, 1200]
+        else:
+            self.rent_list = rent_list if rent_list else [200, 80, 200, 600, 900, 1200]
+
+
         self.building_price = building_price
 
         self.setPos(x, y)
@@ -86,6 +99,7 @@ class PropertyCell(Cell):
                 if player.buy_decision(self):
                     player.pay(self.property_price)
                     self.owner = player
+                    self.value_text.setPlainText(str(self.rent_list[0]))
                     player.properties.append(self)
     
                     tint_color = QColor(player.color)

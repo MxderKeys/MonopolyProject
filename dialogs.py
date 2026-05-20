@@ -17,6 +17,8 @@ class AuctionDialog(QDialog):
         self.cell = property_cell
         self.on_finish_callback = on_finish_callback
         
+        self.setWindowFlag(Qt.WindowType.WindowCloseButtonHint, False)
+        
         # Список тех, кто ВСЁ ЕЩЁ участвует в торгах (изначально все живые)
         self.auction_players = [p for p in players if not p.is_bankrupt]
         
@@ -139,6 +141,7 @@ class AuctionDialog(QDialog):
             print(f"АУКЦИОН ЗАВЕРШЕН! Участок {self.cell.property_name} уходит к {self.current_winner.name} за ${self.current_bid}")
             self.current_winner.pay(self.current_bid)
             self.cell.owner = self.current_winner
+            self.cell.value_text.setPlainText(str(self.cell.rent_list[0]))
             self.current_winner.properties.append(self.cell)
             
             tint = QColor(self.current_winner.color)
@@ -147,6 +150,20 @@ class AuctionDialog(QDialog):
             
         self.on_finish_callback()
         self.close()
+        
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Escape:
+            print("Клавиша Escape заблокирована в этом окне!")
+            event.ignore()
+        else:
+            super().keyPressEvent(event)
+
+    def closeEvent(self, event):
+        if not self.is_resolved:
+            print("АЛЁ!!! Куда закрываешь?")
+            event.ignore()
+        else:
+            super().closeEvent(event)
         
         
 class BuyDialog(QDialog):

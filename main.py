@@ -56,7 +56,7 @@ class GameBoardView(QGraphicsView):
     def __init__(self, humans_count, bots_count):
         super().__init__()
         
-        self.game_scene = QGraphicsScene(0, 0, 2400, 2000)
+        self.game_scene = QGraphicsScene(0, 0, 2400, 2400)
         self.setScene(self.game_scene)
         self.setBackgroundBrush(QBrush(QColor(30, 30, 30)))
 
@@ -70,7 +70,7 @@ class GameBoardView(QGraphicsView):
 
         self.game_map = GameMap(0, 0)
         self.game_scene.addItem(self.game_map)
-        self.game_map.setPos(630, 430)
+        self.game_map.setPos(630, 630)
         self.centerOn(self.game_map)
 
         self.players = []
@@ -78,7 +78,7 @@ class GameBoardView(QGraphicsView):
         color_idx = 0
 
         for i in range(humans_count):
-            player = Player(f"Игрок {i+1}", colors[color_idx], 1000)
+            player = Player(f"Игрок {i+1}", colors[color_idx], 5000)
             player.player_id = color_idx
             self.players.append(player)
             color_idx += 1
@@ -91,14 +91,15 @@ class GameBoardView(QGraphicsView):
             
         self.game_map.players = self.players
         
-        offset_min = 220 
-        offset_max = 900
+        offset_min = 630 + 190
+        offset_max = 630 + 190 + 6 * (85) + 30
+        offset_max_y = 630 + 190 + 8 * (85) - 5
         
         corner_positions = [
-            (offset_min, offset_min),           # Верхний левый
-            (offset_max, offset_min),           # Верхний правый
-            (offset_min, offset_max),           # Нижний левый
-            (offset_max, offset_max)            # Нижний правый
+            (offset_min, offset_min),             # Верхний левый
+            (offset_max, offset_min),             # Верхний правый
+            (offset_min, offset_max_y),           # Нижний левый
+            (offset_max, offset_max_y)            # Нижний правый
         ]
         
         for i, p in enumerate(self.players):

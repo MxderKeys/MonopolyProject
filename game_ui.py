@@ -44,6 +44,7 @@ class DiceUI(QGraphicsTextItem):
         super().__init__("Ожидание броска...")
         self.setFont(QFont("Arial", 24, QFont.Bold))
         self.setDefaultTextColor(Qt.white)
+        self.setZValue(6)
         
         # Добавляем темный полупрозрачный фон для текста, чтобы читалось на любом фоне
         bg = QGraphicsRectItem(-20, -10, 250, 60, self)
