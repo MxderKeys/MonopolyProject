@@ -43,6 +43,11 @@ class PropertyCell(Cell):
         name_font = QFont("Arial", 14)
         name_font.setBold(True)
 
+        self.owner_tint = QGraphicsRectItem(0, 0, width, height, self)
+        self.owner_tint.setBrush(QBrush(Qt.transparent))
+        self.owner_tint.setPen(Qt.NoPen)
+        self.owner_tint.setZValue(-1)
+
         self.color_rect = QGraphicsRectItem(5, 5, width - 10, 30, self)
         self.color_rect.setBrush(QBrush(GROUP_COLORS.get(cell_group, QColor(0, 0, 0)))) 
         self.color_rect.setPen(QColor(0, 0, 0))
@@ -82,8 +87,8 @@ class PropertyCell(Cell):
                     player.properties.append(self)
     
                     tint_color = QColor(player.color)
-                    tint_color.setAlpha(70)
-                    self.setBrush(QBrush(tint_color))
+                    tint_color.setAlpha(80)
+                    self.owner_tint.setBrush(QBrush(tint_color))
                     print(f"[{player.name}] купил {self.property_name}!")
                 else:
                     print(f"[{player.name}] отказался от покупки. Аукцион!")
@@ -407,8 +412,8 @@ class BuyDialog(QDialog):
 
             tint_color = QColor(self.player.color)
             tint_color.setAlpha(80)
-            self.cell.setBrush(QBrush(tint_color))
-            
+            self.cell.owner_tint.setBrush(QBrush(tint_color))
+
             print(f"[{self.player.name}] Купил участок!")
             self.is_resolved = True
             self.unlock_callback() 
